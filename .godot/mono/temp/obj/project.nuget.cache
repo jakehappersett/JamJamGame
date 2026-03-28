@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "n2Ot45czans=",
+  "success": true,
+  "projectFilePath": "/Users/jakehappersett/Documents/prj/Games/JamJamGame/JamJamGame.csproj",
+  "expectedPackageFiles": [
+    "/Users/jakehappersett/.nuget/packages/godot.sourcegenerators/4.6.1/godot.sourcegenerators.4.6.1.nupkg.sha512",
+    "/Users/jakehappersett/.nuget/packages/godotsharp/4.6.1/godotsharp.4.6.1.nupkg.sha512",
+    "/Users/jakehappersett/.nuget/packages/godotsharpeditor/4.6.1/godotsharpeditor.4.6.1.nupkg.sha512"
+  ],
+  "logs": []
+}

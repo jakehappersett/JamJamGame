@@ -1,3 +1,13 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1774657159
-icon.svg::CompressedTexture2D::5603993617129264973::1774657156::1774657159::1::::<><><>0<>0<>8247f673f4b20a64bc12c3e2c2618cf9<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+::res://::1774665902
+icon.svg::CompressedTexture2D::5603993617129264973::1774657314::1774657314::1::::<><><>0<>0<>8247f673f4b20a64bc12c3e2c2618cf9<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+Player.tscn::PackedScene::8118739926001680806::1774664306::0::1::::<><><>0<>0<><>::uid://cl3u7rjmd8uph::::res://icon.svg<>uid://dmhqgt0g3v6jl::::res://Player.cs
+README.md::TextFile::-1::1774657608::0::1::::<><><>0<>0<><>::
+Player.cs::CSharpScript::8016962042536457633::1774665503::0::1::::<>CharacterBody2D<><>0<>0<><>::
+world.gd::GDScript::7788961491196437436::1774663963::0::1::::<>Node2D<><>0<>0<><>::
+world.tscn::PackedScene::1332855567304978003::1774665888::0::1::::<><><>0<>0<><>::uid://di8bb716qf565::::res://world.gd<>uid://dnw1pwij20qrm::::res://Player.tscn
+::res://ASSETS/::1774665902
+BACK.png::CompressedTexture2D::9066248381416800500::1774665902::1774665907::1::::<><><>0<>0<>1e14f4d7446d5b5e0495ee9382834c3b<>res://.godot/imported/BACK.png-cb39cc4232b268e3ca83517915dd765f.ctex::
+MOON.png::CompressedTexture2D::9105922051466115098::1774665902::1774665906::1::::<><><>0<>0<>a519a5f63a8f3a279a977e67628a5bc6<>res://.godot/imported/MOON.png-da9bfe320123ad4f5ccf54cbf08d4808.ctex::
+MOUNTAIN.png::CompressedTexture2D::2273418182114002017::1774665902::1774665906::1::::<><><>0<>0<>25adc42b05c8aeae5df1f607fa8d9011<>res://.godot/imported/MOUNTAIN.png-6275d32bbbea9aa53355557ba9759924.ctex::
+STARS.png::CompressedTexture2D::3511073812631071707::1774665902::1774665905::1::::<><><>0<>0<>7343b0280dc10b439c65c77c7a5892f2<>res://.godot/imported/STARS.png-ca2affa05a634722cad2740fd92c6d5a.ctex::
