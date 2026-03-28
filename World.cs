@@ -4,8 +4,8 @@ using System.Collections.Generic;
 
 public partial class World : Node2D
 {
-	// Platform scene to instantiate
-	private PackedScene platformScene;
+	// Platform scenes to instantiate
+	private PackedScene[] platformScenes;
 
 	// Player reference
 	private CharacterBody2D player;
@@ -28,7 +28,12 @@ public partial class World : Node2D
 
 	public override void _Ready()
 	{
-		platformScene = GD.Load<PackedScene>("res://Platform.tscn");
+		platformScenes = new PackedScene[]
+		{
+			GD.Load<PackedScene>("res://platform_small.tscn"),
+			GD.Load<PackedScene>("res://platform_med.tscn"),
+			GD.Load<PackedScene>("res://Platform.tscn")
+		};
 		player = GetNode<CharacterBody2D>("Player");
 
 		// Keep the visible start point at the bottom of the background art.
@@ -170,7 +175,8 @@ public partial class World : Node2D
 			return false;
 		}
 
-		var platform = platformScene.Instantiate<Node2D>();
+		var randomScene = platformScenes[GD.Randi() % (uint)platformScenes.Length];
+		var platform = randomScene.Instantiate<Node2D>();
 		platform.GlobalPosition = position;
 		AddChild(platform);
 		spawnedPlatforms.Add(platform);

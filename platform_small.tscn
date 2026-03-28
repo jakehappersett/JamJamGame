@@ -7,6 +7,7 @@ radius = 5.0
 height = 52.0
 
 [node name="Platform_small" type="StaticBody2D" unique_id=1420451194]
+z_index = -6
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=399328428]
 scale = Vector2(0.5, 0.5)
