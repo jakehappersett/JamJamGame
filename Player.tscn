@@ -32,7 +32,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"run_left",
-"speed": 5.0
+"speed": 12.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -49,7 +49,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"run_right",
-"speed": 5.0
+"speed": 12.0
 }]
 
 [node name="Player" type="CharacterBody2D" unique_id=2066433984]
@@ -68,7 +68,9 @@ texture = ExtResource("2_kpjcp")
 position = Vector2(0, -32)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=774355186]
-position = Vector2(31.999985, -8)
+position = Vector2(-3.8146973e-06, 9.536743e-07)
 scale = Vector2(0.187, 0.187)
 sprite_frames = SubResource("SpriteFrames_tdg3f")
-animation = &"run_left"
+animation = &"run_right"
+frame = 1
+frame_progress = 0.3497925
