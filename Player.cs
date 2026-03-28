@@ -88,6 +88,12 @@ public partial class Player : CharacterBody2D
 		}
 
 		Velocity = velocity;
+		ProcessAnimations(direction);
 		MoveAndSlide();
+	}
+
+	private void ProcessAnimations(Vector2 direction)
+	{
+		var animatedSprite2D = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
 	}
 }

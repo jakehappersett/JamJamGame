@@ -1,0 +1,32 @@
+# Godot generated data
+.godot/
+.import/
+
+# Godot C# / Mono generated data
+.mono/
+
+# .NET build outputs
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio / Rider user files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.rsuser
+
+# VS Code workspace settings (keep extension recommendations)
+.vscode/*
+!.vscode/extensions.json
+
+# Crash and log files
+*.log
+mono_crash.*
+
+# OS files
+.DS_Store
+Thumbs.db
