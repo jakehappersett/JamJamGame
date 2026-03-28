@@ -1,23 +1,23 @@
 [gd_scene format=3 uid="uid://dnw1pwij20qrm"]
 
-[ext_resource type="Texture2D" uid="uid://cl3u7rjmd8uph" path="res://icon.svg" id="1_f50pn"]
 [ext_resource type="Script" uid="uid://dmhqgt0g3v6jl" path="res://Player.cs" id="1_kpjcp"]
+[ext_resource type="Texture2D" uid="uid://cnd77hwr5mh7a" path="res://ASSETS/Spatulad.png" id="2_kpjcp"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ij6vw"]
-size = Vector2(25, 25)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_kne1u"]
+radius = 4.5
+height = 25.0
 
 [node name="Player" type="CharacterBody2D" unique_id=2066433984]
 script = ExtResource("1_kpjcp")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=579195793]
-position = Vector2(75.5, 11.5)
-shape = SubResource("RectangleShape2D_ij6vw")
+shape = SubResource("CapsuleShape2D_kne1u")
+metadata/_edit_group_ = true
 
 [node name="Sprite2D" type="Sprite2D" parent="CollisionShape2D" unique_id=95160960]
 position = Vector2(0.50000095, 0.49999905)
 scale = Vector2(0.18749999, 0.18749999)
-texture = ExtResource("1_f50pn")
+texture = ExtResource("2_kpjcp")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1623375023]
-position = Vector2(76, -32)
-zoom = Vector2(0.75, 0.75)
+position = Vector2(0, -32)

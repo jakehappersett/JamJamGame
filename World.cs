@@ -18,6 +18,9 @@ public partial class World : Node2D
 	private const float PlatformSpacingX = 240f; // Horizontal range for platform placement
 	private const float MinHorizontalGap = 100f; // Minimum x-gap between neighboring platforms
 	private const float MinVerticalGap = 90f; // Minimum y-gap to avoid crowding
+	private const float PlatformCullDistanceBelowPlayer = 700f; // Remove platforms far below player
+	private const float BorderThickness = 32f;
+	private const float CeilingThickness = 32f;
 
 	// Track spawned platforms
 	private List<Node2D> spawnedPlatforms = new List<Node2D>();
@@ -25,20 +28,60 @@ public partial class World : Node2D
 
 	public override void _Ready()
 	{
-		// Load the platform scene
 		platformScene = GD.Load<PackedScene>("res://Platform.tscn");
-
-		// Get player reference
 		player = GetNode<CharacterBody2D>("Player");
+
+		// Keep the visible start point at the bottom of the background art.
+		AlignBackgroundsToFloor();
+		CreateBorders();
 
 		// Create initial platforms
 		SpawnInitialPlatforms();
+	}
+
+	private void AlignBackgroundsToFloor()
+	{
+		var floor = GetNodeOrNull<StaticBody2D>("Floor");
+		if (floor == null)
+		{
+			return;
+		}
+
+		float floorY = floor.GlobalPosition.Y;
+		AlignBackgroundLayerToFloor("back", floorY);
+		AlignBackgroundLayerToFloor("mountain", floorY);
+		AlignBackgroundLayerToFloor("moon", floorY);
+		AlignBackgroundLayerToFloor("stars", floorY);
+	}
+
+	private void AlignBackgroundLayerToFloor(string layerName, float floorY)
+	{
+		var layer = GetNodeOrNull<Node2D>(layerName);
+		if (layer == null)
+		{
+			return;
+		}
+
+		var sprite = layer.GetNodeOrNull<Sprite2D>("Sprite2D");
+		if (sprite == null || sprite.Texture == null)
+		{
+			return;
+		}
+
+		// Sprite2D is centered by default, so move its center up by half height.
+		float textureHeight = sprite.Texture.GetHeight();
+		float totalScaleY = layer.Scale.Y * sprite.Scale.Y;
+		float halfHeight = textureHeight * totalScaleY * 0.5f;
+
+		sprite.GlobalPosition = new Vector2(layer.GlobalPosition.X, floorY - halfHeight);
 	}
 
 	public override void _Process(double delta)
 	{
 		if (player != null)
 		{
+			// CullOffscreenPlatforms();
+
 			// Update highest player position
 			highestPlayerY = Mathf.Min(highestPlayerY, player.GlobalPosition.Y);
 
@@ -46,6 +89,28 @@ public partial class World : Node2D
 			if (ShouldSpawnPlatforms())
 			{
 				SpawnNewPlatforms();
+			}
+		}
+	}
+
+	private void CullOffscreenPlatforms()
+	{
+		float cullY = player.GlobalPosition.Y + PlatformCullDistanceBelowPlayer;
+
+		// Iterate backwards so removals are safe while traversing.
+		for (int i = spawnedPlatforms.Count - 1; i >= 0; i--)
+		{
+			Node2D platform = spawnedPlatforms[i];
+			if (!IsInstanceValid(platform))
+			{
+				spawnedPlatforms.RemoveAt(i);
+				continue;
+			}
+
+			if (platform.GlobalPosition.Y > cullY)
+			{
+				spawnedPlatforms.RemoveAt(i);
+				platform.QueueFree();
 			}
 		}
 	}
@@ -151,27 +216,83 @@ public partial class World : Node2D
 
 	private void CreateBorders()
 	{
-		// Left wall
-		CreateBorderWall("LeftWall", new Vector2(-200, 0), new Vector2(50, 1000));
+		if (!TryGetBackBounds(out float left, out float right, out float top, out float bottom))
+		{
+			return;
+		}
 
-		// Right wall
-		CreateBorderWall("RightWall", new Vector2(1000, 0), new Vector2(50, 1000));
+		float worldHeight = bottom - top;
+		float sideCenterY = top + worldHeight * 0.5f;
 
-		// Ceiling (at mountain peak)
-		CreateBorderWall("Ceiling", new Vector2(0, -500), new Vector2(1500, 50));
+		// Keep inside faces of side walls aligned to the visual background edges.
+		float leftWallX = left - BorderThickness * 0.5f;
+		float rightWallX = right + BorderThickness * 0.5f;
+
+		CreateBorderWall("LeftWall", new Vector2(leftWallX, sideCenterY), new Vector2(BorderThickness, worldHeight));
+		CreateBorderWall("RightWall", new Vector2(rightWallX, sideCenterY), new Vector2(BorderThickness, worldHeight));
+
+	}
+
+	private bool TryGetBackBounds(out float left, out float right, out float top, out float bottom)
+	{
+		left = 0f;
+		right = 0f;
+		top = 0f;
+		bottom = 0f;
+
+		var layer = GetNodeOrNull<Node2D>("back");
+		if (layer == null)
+		{
+			return false;
+		}
+
+		var sprite = layer.GetNodeOrNull<Sprite2D>("Sprite2D");
+		if (sprite == null || sprite.Texture == null)
+		{
+			return false;
+		}
+
+		float width = sprite.Texture.GetWidth() * layer.Scale.X * sprite.Scale.X;
+		float height = sprite.Texture.GetHeight() * layer.Scale.Y * sprite.Scale.Y;
+
+		left = sprite.GlobalPosition.X - width * 0.5f;
+		right = sprite.GlobalPosition.X + width * 0.5f;
+		top = sprite.GlobalPosition.Y - height * 0.5f;
+		bottom = sprite.GlobalPosition.Y + height * 0.5f;
+		return true;
 	}
 
 	private void CreateBorderWall(string name, Vector2 position, Vector2 size)
 	{
-		var wall = new StaticBody2D();
-		wall.Name = name;
-		wall.GlobalPosition = position;
-		AddChild(wall);
+		var wall = GetNodeOrNull<StaticBody2D>(name);
+		if (wall == null)
+		{
+			wall = new StaticBody2D();
+			wall.Name = name;
+			AddChild(wall);
 
-		var collisionShape = new CollisionShape2D();
-		var rectShape = new RectangleShape2D();
+			var collisionShape = new CollisionShape2D();
+			collisionShape.Name = "CollisionShape2D";
+			wall.AddChild(collisionShape);
+		}
+
+		wall.GlobalPosition = position;
+
+		var existingCollision = wall.GetNodeOrNull<CollisionShape2D>("CollisionShape2D");
+		if (existingCollision == null)
+		{
+			existingCollision = new CollisionShape2D();
+			existingCollision.Name = "CollisionShape2D";
+			wall.AddChild(existingCollision);
+		}
+
+		var rectShape = existingCollision.Shape as RectangleShape2D;
+		if (rectShape == null)
+		{
+			rectShape = new RectangleShape2D();
+			existingCollision.Shape = rectShape;
+		}
+
 		rectShape.Size = size;
-		collisionShape.Shape = rectShape;
-		wall.AddChild(collisionShape);
 	}
 }
