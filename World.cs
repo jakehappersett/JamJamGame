@@ -219,6 +219,29 @@ public partial class World : Node2D
 	{
 		winCameraTween = null;
 		gameState = GameState.Won;
+		ShowRetryButton();
+	}
+
+	private void ShowRetryButton()
+	{
+		var canvas = new CanvasLayer();
+		AddChild(canvas);
+
+		var button = new Button();
+		button.Text = "Play Again";
+		button.CustomMinimumSize = new Vector2(80, 24);
+		button.SetAnchorsPreset(Control.LayoutPreset.Center);
+		button.Pressed += OnRetryPressed;
+		canvas.AddChild(button);
+
+		button.Modulate = new Color(1, 1, 1, 0);
+		var tween = CreateTween();
+		tween.TweenProperty(button, "modulate:a", 1.0f, 0.4f);
+	}
+
+	private void OnRetryPressed()
+	{
+		GetTree().ReloadCurrentScene();
 	}
 
 	private void CullAllPlatforms()
