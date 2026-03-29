@@ -275,7 +275,7 @@ texture = ExtResource("2_kpjcp")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1623375023]
 position = Vector2(0, -32)
-limit_bottom = 0
+limit_bottom = 100000
 limit_smoothed = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=774355186]

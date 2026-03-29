@@ -23,6 +23,7 @@ public partial class Player : CharacterBody2D
 	private bool facingRight = true;
 	private AnimatedSprite2D animatedSprite2D;
 	private Sprite2D defaultSprite2D;
+	private bool controlsLocked = false;
 
 	public override void _Ready()
 	{
@@ -37,6 +38,12 @@ public partial class Player : CharacterBody2D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (controlsLocked)
+		{
+			Velocity = Vector2.Zero;
+			return;
+		}
+
 		Vector2 velocity = Velocity;
 		float deltaF = (float)delta;
 		bool jumpedThisFrame = false;
@@ -211,6 +218,19 @@ public partial class Player : CharacterBody2D
 		if (!animatedSprite2D.IsPlaying())
 		{
 			animatedSprite2D.Play();
+		}
+	}
+
+	public void FreezeForWin()
+	{
+		controlsLocked = true;
+		Velocity = Vector2.Zero;
+		isJumpHeld = false;
+		isLanding = false;
+
+		if (animatedSprite2D != null && animatedSprite2D.IsPlaying())
+		{
+			animatedSprite2D.Stop();
 		}
 	}
 }
