@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://blo4pbfab3wqm"]
+
+[ext_resource type="Texture2D" uid="uid://dofpmsoi60f1" path="res://ASSETS/platforms/medium.png" id="1_qpgqc"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_e2w2r"]
+height = 118.0
+
+[node name="Platform_med" type="StaticBody2D" unique_id=1144152161]
+z_index = -6
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2005976657]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_qpgqc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=512097176]
+position = Vector2(0, -25)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_e2w2r")

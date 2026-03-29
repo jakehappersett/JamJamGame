@@ -4,8 +4,8 @@ using System.Collections.Generic;
 
 public partial class World : Node2D
 {
-	// Platform scene to instantiate
-	private PackedScene platformScene;
+	// Platform scenes to instantiate
+	private PackedScene[] platformScenes;
 
 	// Player reference
 	private CharacterBody2D player;
@@ -21,22 +21,58 @@ public partial class World : Node2D
 	private const float PlatformCullDistanceBelowPlayer = 700f; // Remove platforms far below player
 	private const float BorderThickness = 32f;
 	private const float CeilingThickness = 32f;
+	private const float WinCameraDuration = 1.2f;
+	private const float WinMaxZoom = 12f;
+	private const float WinMinZoom = 0.1f;
+	private const float WinMinimumFrameHeight = 24f;
+	private const float DebugStartDistanceBelowWin = 72f;
+
+	[Export]
+	private bool debugStartNearWin = true;
 
 	// Track spawned platforms
 	private List<Node2D> spawnedPlatforms = new List<Node2D>();
 	private float highestPlayerY = 0f;
+	private Camera2D playerCamera;
+	private Tween winCameraTween;
+	private GameState gameState = GameState.Playing;
+
+	private enum GameState
+	{
+		Playing,
+		WinTransition,
+		Won
+	}
 
 	public override void _Ready()
 	{
-		platformScene = GD.Load<PackedScene>("res://Platform.tscn");
+		platformScenes = new PackedScene[]
+		{
+			GD.Load<PackedScene>("res://platform_small.tscn"),
+			GD.Load<PackedScene>("res://platform_med.tscn"),
+			GD.Load<PackedScene>("res://Platform.tscn")
+		};
 		player = GetNode<CharacterBody2D>("Player");
+		playerCamera = player?.GetNodeOrNull<Camera2D>("Camera2D");
 
 		// Keep the visible start point at the bottom of the background art.
 		AlignBackgroundsToFloor();
 		CreateBorders();
+		PositionPlayerNearWinForDebug();
 
 		// Create initial platforms
 		SpawnInitialPlatforms();
+	}
+
+	private void PositionPlayerNearWinForDebug()
+	{
+		if (!debugStartNearWin || player == null || !TryGetLayerBounds("back", out Rect2 backBounds))
+		{
+			return;
+		}
+
+		Vector2 debugStartPosition = new Vector2(backBounds.GetCenter().X, backBounds.Position.Y + DebugStartDistanceBelowWin);
+		player.GlobalPosition = debugStartPosition;
 	}
 
 	private void AlignBackgroundsToFloor()
@@ -78,19 +114,150 @@ public partial class World : Node2D
 
 	public override void _Process(double delta)
 	{
-		if (player != null)
+		if (player == null || gameState != GameState.Playing)
 		{
-			// CullOffscreenPlatforms();
-
-			// Update highest player position
-			highestPlayerY = Mathf.Min(highestPlayerY, player.GlobalPosition.Y);
-
-			// Check if we need to spawn new platforms
-			if (ShouldSpawnPlatforms())
-			{
-				SpawnNewPlatforms();
-			}
+			return;
 		}
+
+		// Update highest player position
+		highestPlayerY = Mathf.Min(highestPlayerY, player.GlobalPosition.Y);
+
+		if (CheckWinCondition())
+		{
+			HandleWin();
+			return;
+		}
+
+		// Check if we need to spawn new platforms
+		if (ShouldSpawnPlatforms())
+		{
+			SpawnNewPlatforms();
+		}
+	}
+
+	private bool CheckWinCondition()
+	{
+		if (!TryGetLayerBounds("back", out Rect2 backBounds))
+		{
+			return false;
+		}
+
+		return player.GlobalPosition.Y <= backBounds.Position.Y;
+	}
+
+	private void HandleWin()
+	{
+		if (gameState != GameState.Playing)
+		{
+			return;
+		}
+
+		gameState = GameState.WinTransition;
+
+		if (player is Player playerNode)
+		{
+			playerNode.FreezeForWin();
+		}
+
+		CullAllPlatforms();
+		StartWinCameraTween();
+	}
+
+	private void StartWinCameraTween()
+	{
+		if (playerCamera == null || !TryGetWinFocusRect(out Rect2 focusRect))
+		{
+			gameState = GameState.Won;
+			return;
+		}
+
+		if (winCameraTween != null)
+		{
+			winCameraTween.Kill();
+			winCameraTween = null;
+		}
+
+		Vector2 currentCameraPosition = playerCamera.GlobalPosition;
+		playerCamera.TopLevel = true;
+		playerCamera.GlobalPosition = currentCameraPosition;
+		playerCamera.PositionSmoothingEnabled = false;
+
+		Vector2 viewportSize = GetViewportRect().Size;
+		// Use Min so the smaller axis determines zoom, ensuring the full rect fits in frame.
+		// In Godot 4 a zoom < 1 means zoomed out (more world visible).
+		float zoomAmount = Mathf.Min(viewportSize.X / focusRect.Size.X, viewportSize.Y / focusRect.Size.Y);
+		zoomAmount = Mathf.Clamp(zoomAmount, WinMinZoom, WinMaxZoom);
+		Vector2 targetZoom = new Vector2(zoomAmount, zoomAmount);
+		Vector2 targetPosition = focusRect.GetCenter();
+
+		winCameraTween = CreateTween();
+		winCameraTween.SetTrans(Tween.TransitionType.Sine);
+		winCameraTween.SetEase(Tween.EaseType.Out);
+		winCameraTween.TweenProperty(playerCamera, "global_position", targetPosition, WinCameraDuration);
+		winCameraTween.Parallel().TweenProperty(playerCamera, "zoom", targetZoom, WinCameraDuration);
+		winCameraTween.Finished += OnWinCameraTweenFinished;
+	}
+
+	private bool TryGetWinFocusRect(out Rect2 focusRect)
+	{
+		focusRect = new Rect2();
+
+		if (!TryGetLayerBounds("back", out Rect2 backBounds) || !TryGetLayerBounds("mountain", out Rect2 mountainBounds))
+		{
+			return false;
+		}
+
+		float visibleMountainHeight = Mathf.Max(backBounds.Position.Y - mountainBounds.Position.Y, WinMinimumFrameHeight);
+		focusRect = new Rect2(
+			new Vector2(mountainBounds.Position.X, mountainBounds.Position.Y),
+			new Vector2(mountainBounds.Size.X, visibleMountainHeight)
+		);
+		return true;
+	}
+
+	private void OnWinCameraTweenFinished()
+	{
+		winCameraTween = null;
+		gameState = GameState.Won;
+		ShowRetryButton();
+	}
+
+	private void ShowRetryButton()
+	{
+		var canvas = new CanvasLayer();
+		AddChild(canvas);
+
+		var button = new Button();
+		button.Text = "Play Again";
+		button.CustomMinimumSize = new Vector2(80, 24);
+		button.SetAnchorsPreset(Control.LayoutPreset.Center);
+		button.Pressed += OnRetryPressed;
+		canvas.AddChild(button);
+
+		button.Modulate = new Color(1, 1, 1, 0);
+		var tween = CreateTween();
+		tween.TweenProperty(button, "modulate:a", 1.0f, 0.4f);
+	}
+
+	private void OnRetryPressed()
+	{
+		GetTree().ReloadCurrentScene();
+	}
+
+	private void CullAllPlatforms()
+	{
+		for (int i = spawnedPlatforms.Count - 1; i >= 0; i--)
+		{
+			Node2D platform = spawnedPlatforms[i];
+			if (!IsInstanceValid(platform))
+			{
+				continue;
+			}
+
+			platform.QueueFree();
+		}
+
+		spawnedPlatforms.Clear();
 	}
 
 	private void CullOffscreenPlatforms()
@@ -170,7 +337,8 @@ public partial class World : Node2D
 			return false;
 		}
 
-		var platform = platformScene.Instantiate<Node2D>();
+		var randomScene = platformScenes[GD.Randi() % (uint)platformScenes.Length];
+		var platform = randomScene.Instantiate<Node2D>();
 		platform.GlobalPosition = position;
 		AddChild(platform);
 		spawnedPlatforms.Add(platform);
@@ -240,7 +408,23 @@ public partial class World : Node2D
 		top = 0f;
 		bottom = 0f;
 
-		var layer = GetNodeOrNull<Node2D>("back");
+		if (!TryGetLayerBounds("back", out Rect2 bounds))
+		{
+			return false;
+		}
+
+		left = bounds.Position.X;
+		right = bounds.End.X;
+		top = bounds.Position.Y;
+		bottom = bounds.End.Y;
+		return true;
+	}
+
+	private bool TryGetLayerBounds(string layerName, out Rect2 bounds)
+	{
+		bounds = new Rect2();
+
+		var layer = GetNodeOrNull<Node2D>(layerName);
 		if (layer == null)
 		{
 			return false;
@@ -255,10 +439,10 @@ public partial class World : Node2D
 		float width = sprite.Texture.GetWidth() * layer.Scale.X * sprite.Scale.X;
 		float height = sprite.Texture.GetHeight() * layer.Scale.Y * sprite.Scale.Y;
 
-		left = sprite.GlobalPosition.X - width * 0.5f;
-		right = sprite.GlobalPosition.X + width * 0.5f;
-		top = sprite.GlobalPosition.Y - height * 0.5f;
-		bottom = sprite.GlobalPosition.Y + height * 0.5f;
+		bounds = new Rect2(
+			new Vector2(sprite.GlobalPosition.X - width * 0.5f, sprite.GlobalPosition.Y - height * 0.5f),
+			new Vector2(width, height)
+		);
 		return true;
 	}
 
